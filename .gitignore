@@ -1,0 +1,9 @@
+# Folders containing non source files
+build/
+bin/
+
+# Cache
+.cache/
+
+# LSP Client
+compile_commands.json
