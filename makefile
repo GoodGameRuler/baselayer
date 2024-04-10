@@ -16,22 +16,25 @@ BUILDDIR 	 		:= build
 BINDIR 	  	 		:= bin
 LIBDIR		 		:= lib
 
+CC 					:= gcc
+
 CXX 	 	 		:= g++
 LD		 	 		:= g++
-TARGET 	 	 		:= game
-CXXFLAGS  	 		:= -g -Wall
+TARGET 	 	 		:= baselayer
+CXXFLAGS  	 		:= -g -Wall -std=c99 -pedantic -fsanitize=address -fsanitize=leak
 CPPFLAGS 	 		:= -I$(LIBDIR)/
-LDFLAGS 	 		:= 
+LDFLAGS 	 		:=
 
-SRCS 	 	 		:= $(wildcard $(SRCDIR)/*.cpp)
-OBJS 	 	 		:= $(SRCS:$(SRCDIR)/%.cpp=$(BUILDDIR)/%.o)
-INCLUDE_DIRS 		:= 
+SRCS 	 	 		:= $(wildcard $(SRCDIR)/*.c)
+OBJS 	 	 		:= $(SRCS:$(SRCDIR)/%.c=$(BUILDDIR)/%.o)
+INCLUDE_DIRS 		:=
 LIBRARY_DIRS 		:=
-LIBRARIES 	 		:= SDL2
+LIBRARIES 	 		:=
 
-PACKAGES 	 		:= pkg1
-PACKAGE_SRCS 		:= $(foreach package,$(PACKAGES), $(shell ls $(SRCDIR)/$(package)/*.cpp))
-PACKAGE_OBJS 		:= $(PACKAGE_SRCS:$(SRCDIR)/%.cpp=$(BUILDDIR)/%.o)
+## Add your subfolders/packages here
+PACKAGES 	 		:=
+PACKAGE_SRCS 		:= $(foreach package,$(PACKAGES), $(shell ls $(SRCDIR)/$(package)/*.c))
+PACKAGE_OBJS 		:= $(PACKAGE_SRCS:$(SRCDIR)/%.p=$(BUILDDIR)/%.o)
 PACKAGE_BUILDDIRS 	:= $(foreach package,$(PACKAGES), $(BUILDDIR)/$(package))
 PACKAGE_FOBJS 		:= $(foreach package,$(PACKAGE_BUILDDIRS), $(package).o)
 PACKAGE_FL			:= .package
@@ -49,14 +52,14 @@ all: $(BINDIR)/$(TARGET)
 ## LINK.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) $(TARGET_ARCH)
 # $(LINK.cc) $^ -o $@ $(LDLIBS)
 $(BINDIR)/$(TARGET): $(PACKAGE_FOBJS) $(OBJS)
-	$(LD) $(CXXFLAGS) $^ -o $@ $(LDLIBS)
-	
-$(OBJS): $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -c -o $@ $(LDLIBS)
+	gcc $(CXXFLAGS) $^ -o $@ $(LDLIBS)
 
-# Creates .o file for each cpp file in each package
-$(PACKAGE_OBJS): $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp | $(PACKAGE_BUILDDIRS)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -c -o $@ $(LDLIBS)
+$(OBJS): $(BUILDDIR)/%.o: $(SRCDIR)/%.c
+	gcc $(CXXFLAGS) $(CPPFLAGS) $< -c -o $@ $(LDLIBS)
+
+# Creates .o file for each c file in each package
+$(PACKAGE_OBJS): $(BUILDDIR)/%.o: $(SRCDIR)/%.c | $(PACKAGE_BUILDDIRS)
+	gcc $(CXXFLAGS) $(CPPFLAGS) $< -c -o $@ $(LDLIBS)
 
 # Creates .o files for each package
 # $(PACKAGE_FOBJS): $(PACKAGE_OBJS) | clean_packages
@@ -71,7 +74,7 @@ $(PACKAGE_BUILDDIRS): $(BUILDDIR)/%: | $(BUILDDIR)
 # $(PACKAGE_BUILDDIRS): $(BUILDDIR)/%/$(PACKAGE_FL): | $(BUILDDIR)
 # Add this generic rule to handle the dependency on individual .o files
 $(PACKAGE_FOBJS): $(BUILDDIR)/%.o: $(BUILDDIR)/% | $(PACKAGE_OBJS)
-	$(LD) -r $(CXXFLAGS) $</*.o -o $@
+	gcc -r $(CXXFLAGS) $</*.o -o $@
 
 # $(PACKAGE_BUILDDIRS): $(BUILDDIR)/%: $(BUILDDIR)/%/*.o | $(BUILDDIR)/%/$(PACKAGE_FL)
 # 	$(LD) -r $(LDFLAGS) $(CXXFLAGS) $< -o $@.o $(LDLIBS)
@@ -94,5 +97,3 @@ genlsp: clean compile_commands.json
 
 echo:
 	@echo $(PACKAGE_BUILDDIRS)
-
-
